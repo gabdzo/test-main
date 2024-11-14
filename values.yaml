@@ -1,9 +1,9 @@
 # Helm chart values
 image:
   repository: your-registry/your-image  # Replace with your image repository
-  tag: initial-tag  # This will be updated by the workflow
+  tag: v1.0.0
   pullPolicy: IfNotPresent
 
-version: initial-version  # This will be updated by the workflow
+version: v1.0.0
 
 # Add other Helm chart values as needed 
