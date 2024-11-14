@@ -1,0 +1,56 @@
+name: Update Test-Main Values
+
+on:
+    repository_dispatch:
+      types: [trigger-workflow]
+      
+jobs:
+  update-test-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from payload
+        id: get-version
+        run: |
+          echo "Received version: ${{ github.event.client_payload.version }}"
+          echo "version=${{ github.event.client_payload.version }}" >> $GITHUB_OUTPUT
+
+      - name: Update values.yaml
+        run: |
+          # Read current values
+          old_tag=$(grep 'tag:' values.yaml | awk '{print $2}')
+          old_version=$(grep 'version:' values.yaml | awk '{print $2}')
+          
+          # Update values.yaml
+          sed -i "s/tag: .*/tag: ${{ github.event.client_payload.version }}/" values.yaml
+          sed -i "s/version: .*/version: ${{ github.event.client_payload.version }}/" values.yaml
+          
+          # Echo changes
+          echo "Updated tag from $old_tag to ${{ github.event.client_payload.version }}"
+          echo "Updated version from $old_version to ${{ github.event.client_payload.version }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "chore: update version to ${{ steps.get-version.outputs.version }}"
+          title: "Update version to ${{ steps.get-version.outputs.version }}"
+          body: |
+            Automated PR to update version in values.yaml
+            
+            Service: ${{ github.event.client_payload.service }}
+            Version: ${{ github.event.client_payload.version }}
+            
+            Changes made:
+            ```diff
+            - tag: "asd"
+            + tag: ${{ steps.get-version.outputs.version }}
+            - version: "asd"
+            + version: ${{ steps.get-version.outputs.version }}
+            ```
+          branch: update-version
+          base: main
